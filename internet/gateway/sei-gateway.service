@@ -1,0 +1,14 @@
+[Unit]
+Description=Gateway LoRa SEI
+After=network-online.target
+
+[Service]
+User=xilinx
+WorkingDirectory=/home/xilinx/sei/gateway
+EnvironmentFile=/home/xilinx/sei/clave.env
+ExecStart=/usr/bin/python3 /home/xilinx/sei/gateway/gateway_pynq.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

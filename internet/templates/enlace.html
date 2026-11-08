@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<div class="rejilla">
+  <section class="panel ancho">
+    <h2>Caracterización del enlace LoRa por nodo (últimas 500 tramas)</h2>
+    <div class="tabla"><table>
+      <thead><tr>
+        <th>Nodo</th><th>Recibidas / esperadas</th><th>Pérdida (PER)</th>
+        <th>RSSI medio</th><th>RSSI Kalman</th><th>SNR medio</th><th>SNR (KLE)</th>
+        <th>PRR (KLE)</th><th>PRR (WMEWMA)</th><th>Latencia media</th><th>Latencia máx.</th><th>Throughput</th>
+      </tr></thead>
+      <tbody id="filas"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel ancho">
+    <h2>RSSI medido vs. estimado por Kalman</h2>
+    <p><select id="nodo"><option>N1</option><option>N2</option><option selected>N3</option></select></p>
+    <div class="grafico"><canvas id="g-rssi"></canvas></div>
+  </section>
+
+ <div class="rejilla ancho">
+  <section class="panel">
+    <h2>PRR estimado con WMEWMA</h2>
+    <div class="grafico"><canvas id="g-wmewma"></canvas></div>
+  </section>
+
+  <section class="panel">
+    <h2>Cómo se calcula (ppt Red de Sensores Inalámbricos)</h2>
+    <div class="dato"><span>Pérdida de paquetes</span><span class="formula">PER = 1 − recibidas / esperadas</span></div>
+    <p class="nota">Las esperadas salen del número de secuencia de cada nodo: un salto de seq es una trama perdida.</p>
+    <div class="dato"><span>SNR por hardware</span><span class="formula">SNR = RSSI − ruido ambiente</span></div>
+    <p class="nota">El gateway sube el RSSI de cada trama y el ruido ambiente que mide el módulo.</p>
+    <div class="dato"><span>WMEWMA</span><span class="formula">est = α·est + (1−α)·PRR<sub>ventana</sub></span></div>
+    <p class="nota">Ventanas de W tramas esperadas; los HEARTBEAT periódicos sirven como mensajes “alive”.</p>
+    <div class="dato"><span>Kalman (KLE)</span><span class="formula">x̂ = x̂ + K(RSSI − x̂)</span></div>
+    <p class="nota">Filtra el RSSI, resta el ruido para estimar el SNR y lo pasa por una curva PRR vs SNR
+      (centrada en el SNR mínimo de LoRa SF7; se calibra con mediciones reales).</p>
+    <div class="dato"><span>Latencia</span><span class="formula">t<sub>servidor</sub> − t<sub>nodo</sub></span></div>
+    <div class="dato"><span>Throughput</span><span class="formula">bits de payload / tiempo</span></div>
+  </section>
+ </div>
+</div>
+<script>
+let gRssi, gW;
+async function refrescar() {
+  refrescarCabecera();
+  const q = await pedir('/api/enlace');
+  document.getElementById('filas').innerHTML = Object.entries(q).map(([n, m]) => m ? `<tr>
+    <td><b>${n}</b></td><td>${m.recibidas} / ${m.esperadas}</td><td>${txt(m.per_pct, 1)} %</td>
+    <td>${txt(m.rssi_medio, 1)} dBm</td><td>${txt(m.rssi_kalman, 1)} dBm</td>
+    <td>${txt(m.snr_medio, 1)} dB</td><td>${txt(m.snr_kle, 1)} dB</td>
+    <td>${txt(m.prr_kle_pct, 1)} %</td><td>${txt(m.prr_wmewma_pct, 1)} %</td>
+    <td>${txt(m.latencia_media_s, 2)} s</td><td>${txt(m.latencia_max_s, 2)} s</td>
+    <td>${txt(m.throughput_bps, 1)} bps</td></tr>` : `<tr><td><b>${n}</b></td><td colspan="11">sin datos</td></tr>`).join('');
+
+  const m = q[document.getElementById('nodo').value];
+  if (!gRssi) {
+    gRssi = new Chart(document.getElementById('g-rssi'), {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'RSSI medido (dBm)', data: [], borderColor: color('--suave'), pointRadius: 0, borderWidth: 1 },
+        { label: 'RSSI Kalman (dBm)', data: [], borderColor: color('--agua'), pointRadius: 0, borderWidth: 2 },
+      ] },
+      options: { animation: false, maintainAspectRatio: false,
+        scales: { x: { title: { display: true, text: 'trama' } } } },
+    });
+    gW = new Chart(document.getElementById('g-wmewma'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'PRR estimado', data: [], borderColor: color('--ok'), pointRadius: 2 }] },
+      options: { animation: false, maintainAspectRatio: false,
+        scales: { y: { min: 0, max: 1 }, x: { title: { display: true, text: 'ventana' } } } },
+    });
+  }
+  const crudo = m ? m.hist_rssi : [], filtrado = m ? m.hist_rssi_kalman : [];
+  gRssi.data.labels = crudo.map((_, i) => i + 1);
+  gRssi.data.datasets[0].data = crudo;
+  gRssi.data.datasets[1].data = filtrado;
+  gRssi.update();
+  const w = m ? m.hist_wmewma : [];
+  gW.data.labels = w.map((_, i) => i + 1);
+  gW.data.datasets[0].data = w;
+  gW.update();
+}
+document.getElementById('nodo').onchange = refrescar;
+cadaRato(refrescar);
+</script>
+{% endblock %}

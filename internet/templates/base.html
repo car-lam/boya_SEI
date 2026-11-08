@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Central SEI · Alerta de crecidas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='comun.js') }}"></script>
+</head>
+<body>
+  <header>
+    <h1>Central SEI <small>· red LoRa de alerta de crecidas</small></h1>
+    <nav>
+      <a href="/" class="{{ 'activa' if pagina == 'resumen' }}">Resumen</a>
+      <a href="/nodos" class="{{ 'activa' if pagina == 'nodos' }}">Nodos</a>
+      <a href="/enlace" class="{{ 'activa' if pagina == 'enlace' }}">Calidad de enlace</a>
+      <a href="/capacidad" class="{{ 'activa' if pagina == 'capacidad' }}">Capacidad</a>
+      <a href="/alertas"class="{{ 'activa' if pagina == 'alertas' }}">Alertas</a>
+      <a href="/tramas" class="{{ 'activa' if pagina == 'tramas' }}">Tramas</a>
+    </nav>
+    <span id="estado-rio" class="etiqueta estado-rio">Río: …</span>
+  </header>
+  <main>
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>

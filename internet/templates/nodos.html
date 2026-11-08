@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<div class="rejilla">
+  <section class="panel ancho">
+    <h2>Histórico por variable</h2>
+    <p>
+      <select id="variable">
+        <option value="N3|nivel_cm">N3 · nivel (cm)</option>
+        <option value="N3|confianza">N3 · confianza de la visión (%)</option>
+        <option value="N1|temp_C">N1 · temperatura (°C)</option>
+        <option value="N1|hr_pct">N1 · humedad (%)</option>
+        <option value="N1|presion_hPa">N1 · presión (hPa)</option>
+        <option value="N1|gas_ohm">N1 · resistencia de gas (Ω)</option>
+        <option value="N2|co2_ppm">N2 · CO₂ (ppm)</option>
+        <option value="N2|temp_C">N2 · temperatura (°C)</option>
+        <option value="N2|hr_pct">N2 · humedad (%)</option>
+        <option value="N1|vbat_mV">N1 · alimentación (mV)</option>
+        <option value="N2|vbat_mV">N2 · alimentación (mV)</option>
+        <option value="N3|vbat_mV">N3 · alimentación (mV)</option>
+      </select>
+      <select id="horas">
+        <option value="1">Última hora</option>
+        <option value="6">Últimas 6 h</option>
+        <option value="24">Últimas 24 h</option>
+        <option value="168">Última semana</option>
+      </select>
+    </p>
+    <div class="grafico"><canvas id="g"></canvas></div>
+  </section>
+  <section class="panel ancho">
+    <h2>Estado de cada nodo</h2>
+    <div class="tabla"><table>
+      <thead><tr><th>Nodo</th><th>Sensor</th><th>Estado</th><th>Último dato</th><th>Valores</th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table></div>
+    <p class="nota">Un nodo se marca “sin señal” si no llega ninguna trama válida suya en 3 periodos de reporte.</p>
+  </section>
+</div>
+<script>
+let grafico;
+async function refrescar() {
+  const r = await refrescarCabecera();
+  if (r) {
+    document.getElementById('filas').innerHTML = r.nodos.map(n => `<tr>
+      <td><b>${n.nodo}</b></td><td>${n.sensor}</td>
+      <td><span class="etiqueta ${n.en_linea ? 'en-linea' : 'caido'}">${n.en_linea ? 'En línea' : 'Sin señal'}</span></td>
+      <td>${haceTexto(n.visto_hace_s)}</td>
+      <td>${Object.entries(n.valores).map(([k, v]) => k + ': ' + v).join(' · ') || '—'}</td></tr>`).join('');
+  }
+  const [nodo, variable] = document.getElementById('variable').value.split('|');
+  const horas = document.getElementById('horas').value;
+  const serie = aPuntos(await pedir(`/api/serie?nodo=${nodo}&var=${variable}&horas=${horas}`));
+  if (!grafico) grafico = graficoTiempo(document.getElementById('g'), [{ label: '', borderColor: color('--agua') }]);
+  grafico.data.datasets[0].label = document.getElementById('variable').selectedOptions[0].text;
+  grafico.data.datasets[0].data = serie;
+  grafico.update();
+}
+document.getElementById('variable').onchange = refrescar;
+document.getElementById('horas').onchange = refrescar;
+cadaRato(refrescar);
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<div class="rejilla">
+  <section class="panel ancho">
+    <h2>¿Cuánto soporta la red como máximo?</h2>
+    <p class="nota">Los nodos transmiten sin turnos ni ACK (ALOHA puro): si dos tramas se solapan en el aire, se pierden las dos.
+      La capacidad se calcula con fórmulas, se comprueba con una simulación y se verifica con lo que mide la red.</p>
+    <div class="rejilla">
+      <div class="dato"><span>Tiempo en el aire (trama más larga)</span><b id="toa">—</b></div>
+      <div class="dato"><span>Choque con los 3 nodos (periodo <span id="periodo">—</span>)</span><b id="choque3">—</b></div>
+      <div class="dato"><span>Nodos máximos con choque ≤ 1 % / 5 % / 10 %</span><b id="maxn">—</b></div>
+      <div class="dato"><span>Canal saturado (ALOHA rinde su máximo, 18,4 %)</span><b id="satur">—</b></div>
+      <div class="dato"><span>Energía de radio por trama / por día y nodo</span><b id="energia">—</b></div>
+      <div class="dato"><span>Canal ocupado por cada nodo</span><b id="ocup">—</b></div>
+    </div>
+  </section>
+
+  <section class="panel ancho">
+    <h2>Probabilidad de choque según la cantidad de nodos</h2>
+    <div class="grafico"><canvas id="g-curva"></canvas></div>
+    <p class="nota">Línea: fórmula de ALOHA. Puntos: simulación de Monte Carlo (cada nodo transmite una vez por periodo
+      en un instante al azar, 400 periodos). Que coincidan valida la fórmula.</p>
+  </section>
+
+ <div class="rejilla ancho">
+  <section class="panel">
+    <h2>Tramas y tiempo en el aire</h2>
+    <p class="nota" id="radio"></p>
+    <div class="tabla"><table>
+      <thead><tr><th>Trama (v2: cifrada + Hamming)</th><th>Bytes</th><th>Tiempo en el aire</th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Verificación con la red (última hora)</h2>
+    <div id="medido"></div>
+    <p class="nota">Mientras no esté la radio real, estos datos vienen del simulador (los nodos reportan cada 10 s en
+      vez de cada 60 s, por eso la carga es mayor). La pérdida medida incluye además las tramas que se pierden por
+      señal débil, no solo por choques.</p>
+  </section>
+ </div>
+
+  <section class="panel ancho">
+    <h2>Cómo se calcula (ppt Comunicaciones inalámbricas, LoRa)</h2>
+    <div class="dato"><span>Tiempo de símbolo</span><span class="formula">T<sub>s</sub> = 2<sup>SF</sup> / BW</span></div>
+    <div class="dato"><span>Tasa de datos</span><span class="formula">DR = SF · BW / 2<sup>SF</sup> · CR</span></div>
+    <div class="dato"><span>Tiempo en el aire</span><span class="formula">ToA = (n<sub>preámbulo</sub> + 4,25)·T<sub>s</sub> + (8 + ⌈(8·PL − 4·SF + 44) / (4·SF)⌉·(CR + 4))·T<sub>s</sub></span></div>
+    <p class="nota">PL = bytes de la trama. Fórmula de Semtech (paper de Augustin et al. 2016, el que cita la ppt).</p>
+    <div class="dato"><span>Probabilidad de choque</span><span class="formula">P = 1 − e<sup>−2·(n−1)·ToA / T</sup></span></div>
+    <p class="nota">Una trama se pierde si otro de los n−1 nodos empieza a transmitir dentro de su ventana vulnerable de
+      2·ToA; T es el periodo de reporte de cada nodo.</p>
+    <div class="dato"><span>Energía por trama</span><span class="formula">E = V · I<sub>TX</sub> · ToA</span></div>
+    <p class="nota">I<sub>TX</sub> = 110 mA a 22 dBm (manual del E220). Bajar el tiempo en el aire baja el consumo, que es
+      el criterio de puntaje del proyecto.</p>
+  </section>
+</div>
+<script>
+let gCurva;
+async function refrescar() {
+  refrescarCabecera();
+  const q = await pedir('/api/capacidad');
+  const r = q.radio;
+  document.getElementById('toa').textContent = q.toa_ms + ' ms';
+  document.getElementById('periodo').textContent = q.periodo_s + ' s';
+  document.getElementById('choque3').textContent = q.choque_3_nodos_pct + ' %';
+  document.getElementById('maxn').textContent = `${q.max_nodos['1']} / ${q.max_nodos['5']} / ${q.max_nodos['10']} nodos`;
+  document.getElementById('satur').textContent = q.saturacion_nodos + ' nodos';
+  document.getElementById('energia').textContent = `${q.energia_tx_mJ} mJ / ${q.energia_dia_J} J`;
+  document.getElementById('ocup').textContent = q.ocupacion_nodo_pct + ' % del tiempo';
+  document.getElementById('radio').textContent =
+    `E220 a 2.4k en el aire: SF${r.sf}, BW ${r.bw_khz} kHz, CR ${r.cr}, preámbulo ${r.preambulo} símbolos → ` +
+    `Ts = ${r.t_simbolo_ms} ms, DR = ${r.tasa_bps} bps.`;
+  document.getElementById('filas').innerHTML = q.tramas.map(t =>
+    `<tr><td>${esc(t.trama)}</td><td>${t.bytes}</td><td>${t.toa_ms} ms</td></tr>`).join('');
+
+  const m = q.medido || {};
+  document.getElementById('medido').innerHTML = m.tramas_min ? `
+    <div class="dato"><span>Nodos activos</span><b>${m.nodos}</b></div>
+    <div class="dato"><span>Tramas al aire por minuto (todos los nodos)</span><b>${txt(m.tramas_min, 1)}</b></div>
+    <div class="dato"><span>Bytes medios por trama</span><b>${txt(m.bytes_medio, 1)}</b></div>
+    <div class="dato"><span>Canal ocupado</span><b>${txt(m.ocupacion_canal_pct, 2)} %</b></div>
+    <div class="dato"><span>Choque esperado con esa carga (fórmula)</span><b>${txt(m.choque_esperado_pct, 2)} %</b></div>
+    <div class="dato"><span>Pérdida medida (PER) por nodo</span><b>${Object.entries(m.per_pct).map(([n, p]) => `${n} ${p} %`).join(' · ')}</b></div>`
+    : '<p class="nota">Sin tramas en la última hora.</p>';
+
+  if (!gCurva) {
+    gCurva = new Chart(document.getElementById('g-curva'), {
+      type: 'line',
+      data: { datasets: [
+        { label: 'Fórmula ALOHA (%)', data: [], borderColor: color('--agua'), pointRadius: 0, borderWidth: 2, parsing: false },
+        { label: 'Simulación Monte Carlo (%)', data: [], borderColor: color('--ok'), backgroundColor: color('--ok'),
+          showLine: false, pointRadius: 4, parsing: false },
+      ] },
+      options: { animation: false, maintainAspectRatio: false,
+        scales: { x: { type: 'logarithmic', title: { display: true, text: 'nodos en la red' } },
+                  y: { min: 0, max: 100, title: { display: true, text: '% de tramas que chocan' } } } },
+    });
+  }
+  gCurva.data.datasets[0].data = q.curva.map(c => ({ x: c.nodos, y: c.formula_pct }));
+  gCurva.data.datasets[1].data = q.curva.map(c => ({ x: c.nodos, y: c.simulado_pct }));
+  gCurva.update();
+}
+cadaRato(refrescar);
+</script>
+{% endblock %}

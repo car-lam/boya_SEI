@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<section class="panel">
+  <h2>Últimas 100 tramas que subió el gateway</h2>
+  <p class="nota">Cada trama se valida al llegar: largo, Hamming (corrige 1 bit por palabra), CRC-CCITT,
+    cabecera y duplicados (mismo nodo + seq + timestamp). Las malas se guardan para contarlas, no se botan.</p>
+  <div class="tabla"><table>
+    <thead><tr><th>Hora</th><th>GW</th><th>Nodo</th><th>Tipo</th><th>Seq</th><th>Resultado</th>
+      <th>RSSI</th><th>Ruido</th><th>Trama (hex)</th></tr></thead>
+    <tbody id="filas"></tbody>
+  </table></div>
+</section>
+<script>
+function resultado(t) {
+  if (!t.valida) return `<span class="etiqueta ALERTA">${esc(t.error)}</span>`;
+  if (t.duplicada) return '<span class="etiqueta">duplicada</span>';
+  if (t.corregidos) return `<span class="etiqueta corregida">corregida (${t.corregidos} bit)</span>`;
+  return '<span class="etiqueta NORMAL">válida</span>';
+}
+async function refrescar() {
+  refrescarCabecera();
+  const ts = await pedir('/api/tramas?limite=100');
+  document.getElementById('filas').innerHTML = ts.map(t => `<tr>
+    <td>${hora(t.t_srv * 1000)}</td><td>${esc(t.gw)}</td><td>${t.nodo || '—'}</td><td>${t.tipo || '—'}</td>
+    <td>${txt(t.seq)}</td><td>${resultado(t)}</td>
+    <td>${txt(t.rssi)}</td><td>${txt(t.ruido)}</td><td class="hex" title="${esc(t.hex)}">${esc(t.hex)}</td></tr>`).join('');
+}
+cadaRato(refrescar);
+</script>
+{% endblock %}

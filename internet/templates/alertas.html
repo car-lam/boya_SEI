@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<section class="panel">
+  <h2>Cambios de estado del río</h2>
+  <p class="nota">Como en el protocolo TEEN, solo se registra un evento cuando el estado cambia
+    (por nivel o por velocidad de subida), no en cada lectura.</p>
+  <div class="tabla"><table>
+    <thead><tr><th>Hora</th><th>Nodo</th><th>Estado</th><th>Nivel</th><th>Motivo</th></tr></thead>
+    <tbody id="filas"></tbody>
+  </table></div>
+</section>
+<script>
+async function refrescar() {
+  refrescarCabecera();
+  const a = await pedir('/api/alertas');
+  document.getElementById('filas').innerHTML = a.length ? a.map(x => `<tr>
+    <td>${new Date(x.t * 1000).toLocaleString('es-PE')}</td><td>${x.nodo}</td>
+    <td><span class="etiqueta ${x.estado}">${x.estado}</span></td>
+    <td>${txt(x.nivel_cm)} cm</td><td>${x.motivo}</td></tr>`).join('')
+    : '<tr><td colspan="5">Sin cambios de estado todavía</td></tr>';
+}
+cadaRato(refrescar);
+</script>
+{% endblock %}

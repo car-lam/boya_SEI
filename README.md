@@ -22,6 +22,9 @@ Proyecto del curso **Sistemas Embebidos (SEI)** — UTEC, 2026-2.
 ├── camara/                  # Procesamiento de imagen para leer la regla limnimétrica
 │   ├── main_1.mlx           # Live Script de MATLAB (prototipo del algoritmo)
 │   └── ref06_...jpg         # Imagen de prueba que usa main_1.mlx
+├── internet/                # Central de monitoreo (web + base de datos) y gateway de la PYNQ
+│   ├── gateway/             # Script del gateway: LoRa (E220) -> búfer -> internet o SIM800L
+│   └── README.md            # Trama, API de ingesta, métodos de la ppt; web en https://sei.silosense.dev
 └── imagenes_referencia/     # Fotos de reglas limnimétricas reales para probar el algoritmo
     └── CREDITOS.md          # Autor y licencia de cada imagen
 ```
