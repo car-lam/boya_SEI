@@ -42,6 +42,11 @@ credentials.json
 *.pem
 *.key
 
+# ---------- Office / LibreOffice (archivos de bloqueo y exportados) ----------
+~$*
+.~lock.*#
+presentacion/*.pdf
+
 # ---------- Datos pesados / capturas de la boya ----------
 capturas/
 *.mp4
@@ -103,8 +108,3 @@ _ide/
 RemoteSystemsTempFiles/
 **/Debug/
 **/Release/
-
-# ===== Sistema / editores =====
-.DS_Store
-*.swp
-*~

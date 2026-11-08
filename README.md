@@ -1,19 +1,54 @@
 # Boya de monitoreo ambiental — SEI (UTEC)
 
-Boya flotante para lagos y ríos que mide variables ambientales y el nivel del agua.
-Proyecto del curso **Sistemas Embebidos (SEI)** — UTEC, 2026-2.
+Boya flotante para lagos y ríos que mide variables ambientales y el nivel del agua, y avisa cuando hay crecida (red LoRa de alerta de crecidas).
+Proyecto del curso **Sistemas Embebidos (SEI)** — UTEC, 2026-2. Web de monitoreo: **https://sei.silosense.dev**
 
 ## ¿Qué mide?
 
-| Variable | Cómo se mide |
-|---|---|
-| Calidad del aire | Sensor de gases |
-| Temperatura ambiente | Sensor de temperatura |
-| CO₂ | Sensor de CO₂ |
-| Humedad relativa | Sensor de humedad |
-| Altura del agua | Cámara que fotografía una **regla limnimétrica** + procesamiento de imagen |
+| Nodo | Placa | Sensor | Variables |
+|---|---|---|---|
+| N1 | PSoC #1 | BME680 | Temperatura, humedad relativa, presión, gas (calidad del aire) |
+| N2 | PSoC #2 | SCD41 | CO₂, temperatura, humedad relativa |
+| N3 | PYNQ | Cámara | Altura del agua leyendo una **regla limnimétrica** con procesamiento de imagen |
 
-> Los modelos exactos de los sensores y del microcontrolador se definirán más adelante (ver [Hardware](#hardware)).
+Estados del nivel (en `internet/config.py`): **vigilancia** ≥ 50 cm, **alerta** ≥ 100 cm o si sube 10 cm en 10 min.
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    N1["N1 · PSoC<br/>BME680 + E220"] -- LoRa --> E220
+    N2["N2 · PSoC<br/>SCD41 + E220"] -- LoRa --> E220
+    subgraph PYNQ["PYNQ (gateway)"]
+        E220["E220<br/>receptor LoRa"] --> GW["gateway_pynq.py<br/>búfer en disco"]
+        N3["N3 · Cámara<br/>visión → nivel"] --> GW
+    end
+    GW --> SAL["SIM800L 2G<br/>o Ethernet"]
+    SAL -- "HTTP POST /api/ingesta" --> C["Central · AWS EC2<br/>Flask + SQLite"]
+    C --> WEB["sei.silosense.dev<br/>(túnel Cloudflare)"]
+```
+
+Mientras no llegue la radio real, un simulador en el servidor genera datos de los 3 nodos.
+
+### Trama
+
+```
+| ver | tipo | nodo |  seq  |   timestamp   | largo |  payload (cifrado)  | CRC-16 |
+|  1  |  1   |  1   |   2   |       4       |   1   |          n          |   2    |  bytes, big-endian
+```
+
+```mermaid
+flowchart LR
+    subgraph Nodo
+        A[Payload] --> B["Cifrar<br/>Vigenère / AES-CTR"] --> D[CRC-CCITT] --> E["Hamming (7,4)"]
+    end
+    E -- LoRa --> F
+    subgraph Central
+        F["Hamming corrige 1 bit"] --> G[CRC comprueba] --> H[Quita duplicados] --> I[Descifra] --> J[(SQLite)]
+    end
+```
+
+Detalle de la trama, la API y los métodos de cada página web en [`internet/README.md`](internet/README.md).
 
 ## Estructura del repositorio
 
@@ -25,8 +60,9 @@ Proyecto del curso **Sistemas Embebidos (SEI)** — UTEC, 2026-2.
 ├── internet/                # Central de monitoreo (web + base de datos) y gateway de la PYNQ
 │   ├── gateway/             # Script del gateway: LoRa (E220) -> búfer -> internet o SIM800L
 │   └── README.md            # Trama, API de ingesta, métodos de la ppt; web en https://sei.silosense.dev
-└── imagenes_referencia/     # Fotos de reglas limnimétricas reales para probar el algoritmo
-    └── CREDITOS.md          # Autor y licencia de cada imagen
+├── imagenes_referencia/     # Fotos de reglas limnimétricas reales para probar el algoritmo
+│   └── CREDITOS.md          # Autor y licencia de cada imagen
+└── presentacion/            # Diapositivas de avance (.pptx, se editan en Canva)
 ```
 
 ## Medición del nivel del agua (cámara)
@@ -57,7 +93,29 @@ Para probar con otra imagen, cópiala a `camara/` y cambia el nombre en la líne
 
 ## Hardware
 
-_Por definir:_ microcontrolador, sensores, cámara, alimentación (batería/panel solar), comunicación (WiFi/LoRa/GSM) y carcasa flotante.
+| Parte | Elegido |
+|---|---|
+| Nodos de aire | 2 × PSoC con BME680 (N1) y SCD41 (N2) |
+| Visión + gateway | PYNQ con cámara (N3) |
+| Radio | LoRa Ebyte E220-400T22S en cada nodo y en el gateway |
+| Salida a internet | SIM800L (2G, comandos AT) o Ethernet de la PYNQ |
+| Servidor | AWS EC2 (Flask + SQLite) detrás de un túnel de Cloudflare |
+
+Conexiones y configuración del E220 y el SIM800L: [`internet/gateway/README.md`](internet/gateway/README.md).
+
+_Por definir:_ alimentación (batería / panel solar) y carcasa flotante.
+
+## Estado (9-nov-2026)
+
+- [x] Algoritmo de la regla en MATLAB (funciona con la imagen de prueba)
+- [x] Central web en AWS, con simulador de los 3 nodos
+- [x] Trama, CRC, Hamming y cifrado, con pruebas
+- [x] Gateway probado sin hardware (E220 simulado, central real)
+- [ ] Configurar los E220 y probar el enlace real PSoC → PYNQ
+- [ ] Llevar la visión a la PYNQ (`publicar_nivel`)
+- [ ] Probar el SIM800L con un chip en Lima (`AT+CREG?`)
+- [ ] Firmware de los nodos PSoC
+- [ ] Alimentación y carcasa flotante
 
 ## Imágenes de referencia
 
@@ -69,7 +127,7 @@ El autor y la licencia de cada una están en [`imagenes_referencia/CREDITOS.md`]
 | Nombre | Rol |
 |---|---|
 | Carlos Lam | |
-| | |
+| Raith726 (GitHub) | Central web y gateway |
 | | |
 
 ## Cómo colaborar
