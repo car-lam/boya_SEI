@@ -3,7 +3,7 @@
 Antes: python boya.py   (genera renders/ensamble_stl/ con las piezas ya ubicadas)
 Uso:   blender -b --factory-startup -P render_blender.py -- [--muestras 128] [--rapido]
 
-Salida: renders/blender_exterior.png y renders/blender_interior.png
+Salida: renders/blender_escena.png (con la regla), blender_exterior.png (hero) y blender_interior.png
 """
 import json
 import math
@@ -27,11 +27,12 @@ COLORES = escena_info["colores"]
 
 # acabado de cada pieza: (rugosidad, metálico)
 ACABADO = {
-    "powerbank": (0.35, 0.0), "webcam": (0.3, 0.0), "palo": (0.25, 0.0),
+    "casco": (0.62, 0.0), "tapa_torre": (0.62, 0.0), "banda": (0.8, 0.0), "cabeza": (0.5, 0.0),
+    "rejilla": (0.55, 0.0), "powerbank": (0.35, 0.0), "webcam": (0.3, 0.0),
     "pynq": (0.4, 0.0), "psoc": (0.4, 0.0), "e220": (0.4, 0.0),
 }
-TAPA_Y_ARRIBA = {"tapa", "mastil_camara", "soporte_camara", "caseta_sensores", "palo",
-                 "punta_palo", "imu_punta", "webcam"}
+TAPA_Y_ARRIBA = set(escena_info["ocultas_interior"])
+LENTE_X = escena_info["lente_x_mm"] * MM
 
 
 def srgb_a_lineal(hexcol):
@@ -47,6 +48,22 @@ def material_pla(nombre, hexcol, rug=0.55, met=0.0):
     bsdf.inputs["Base Color"].default_value = srgb_a_lineal(hexcol)
     bsdf.inputs["Roughness"].default_value = rug
     bsdf.inputs["Metallic"].default_value = met
+    return m
+
+
+def material_farol():
+    """Cúpula translúcida con el LED en verde (estado normal)."""
+    m = material_pla("farol", "#f4f1e8", 0.35)
+    bsdf = m.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Emission Color"].default_value = (0.25, 1.0, 0.45, 1)
+    bsdf.inputs["Emission Strength"].default_value = 6.0
+    bsdf.inputs["Transmission Weight"].default_value = 0.6
+    return m
+
+
+def material_vidrio():
+    m = material_pla("ventana", "#0b0d10", 0.02)
+    m.node_tree.nodes["Principled BSDF"].inputs["Coat Weight"].default_value = 1.0
     return m
 
 
@@ -68,7 +85,13 @@ def importar_piezas():
         except Exception:
             pass
         rug, met = ACABADO.get(stl.stem, (0.55, 0.0))
-        me.materials.append(material_pla(f"mat_{stl.stem}", COLORES.get(stl.stem, "#cccccc"), rug, met))
+        if stl.stem == "farol":
+            mat = material_farol()
+        elif stl.stem == "ventana":
+            mat = material_vidrio()
+        else:
+            mat = material_pla(f"mat_{stl.stem}", COLORES.get(stl.stem, "#cccccc"), rug, met)
+        me.materials.append(mat)
         objs[stl.stem] = o
     return objs
 
@@ -117,7 +140,7 @@ def agua():
 def regla():
     """Regla impresa (44 cm + ArUco) fija frente a la cámara, a ~45 cm."""
     alto, ancho = 0.50, 0.10
-    x = 0.085 + 0.45
+    x = LENTE_X + 0.45
     z0 = -0.12  # parte sumergida
     bpy.ops.mesh.primitive_plane_add(size=1, location=(x, 0, z0 + alto / 2), rotation=(math.pi / 2, 0, -math.pi / 2))
     p = bpy.context.object
@@ -203,10 +226,16 @@ def main():
 
     # 1) exterior: 3/4 desde atrás-izquierda, con la regla al fondo
     configurar_render(1600, 1400)
-    cam = camara((-0.75, -1.05, 0.62), (0.18, 0.05, 0.2), lente=45)
+    cam = camara((-0.6, -0.84, 0.46), (0.2, 0.04, 0.16), lente=45)
+    render("blender_escena.png")
+
+    # 2) hero: de frente-derecha, muestra la ventana de la cámara y el farol
+    bpy.data.objects.remove(cam)
+    configurar_render(1600, 1400)
+    cam = camara((0.6, -0.62, 0.36), (0.02, 0.0, 0.15), lente=55)
     render("blender_exterior.png")
 
-    # 2) interior: sin tapa ni lo que va encima, desde arriba
+    # 3) interior: sin tapa ni lo que va encima, desde arriba
     for n in TAPA_Y_ARRIBA:
         if n in objs:
             objs[n].hide_render = True

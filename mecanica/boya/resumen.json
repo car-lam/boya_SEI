@@ -1,72 +1,88 @@
 {
-  "masa_total_g": 1764,
-  "calado_mm": 39.8,
-  "francobordo_mm": 55.2,
-  "KG_mm": 78.5,
-  "KB_mm": 20.2,
-  "BM_mm": 92.3,
-  "GM_mm": 34.1,
-  "camara_sobre_agua_mm": 297,
-  "altura_total_mm": 584,
+  "masa_total_g": 2203,
+  "calado_mm": 51.4,
+  "francobordo_mm": 43.6,
+  "KG_mm": 74.5,
+  "KB_mm": 26.7,
+  "BM_mm": 73.9,
+  "GM_mm": 26.2,
+  "lente_sobre_agua_mm": 231,
+  "lente_x_mm": 54.5,
+  "lente_z_mm": 282.5,
+  "altura_total_mm": 346,
   "masas_g": {
-    "casco": 480,
-    "tapa": 222,
-    "mastil_camara": 54,
-    "soporte_camara": 17,
-    "caseta_sensores": 24,
-    "bandeja": 119,
-    "estante_pynq": 33,
-    "punta_palo": 10,
+    "casco": 650,
+    "tapa_torre": 356,
+    "cabeza": 51,
+    "farol": 2,
+    "rejilla": 5,
+    "banda": 135,
+    "bandeja": 170,
+    "estante_pynq": 48,
     "powerbank": 420,
     "pynq": 150,
     "psoc": 15,
     "e220": 10,
     "imu_base": 5,
     "webcam": 75,
-    "palo": 25,
-    "imu_punta": 5,
-    "cables_tornillos_oring": 100
+    "ventana": 2,
+    "sensores": 8,
+    "cables_tornillos_oring_antena": 100
+  },
+  "con_300g_mas_de_lastre": {
+    "masa_total_g": 2503,
+    "calado_mm": 58.0,
+    "francobordo_mm": 37.0,
+    "GM_mm": 28.4
   },
   "piezas": {
     "casco": {
       "bbox_mm": [
-        252.0,
+        240.0,
         240.0,
         95.0
       ],
-      "vol_cm3": 553.0
+      "masa_g": 650
     },
-    "tapa": {
+    "tapa_torre": {
       "bbox_mm": [
-        240.0,
-        240.0,
-        40.0
+        239.0,
+        239.0,
+        140.0
       ],
-      "vol_cm3": 255.4
+      "masa_g": 356
     },
-    "mastil_camara": {
+    "cabeza": {
       "bbox_mm": [
-        32.0,
-        32.0,
-        229.0
+        56.0,
+        46.0,
+        107.0
       ],
-      "vol_cm3": 62.2
+      "masa_g": 51
     },
-    "soporte_camara": {
+    "farol": {
       "bbox_mm": [
-        35.0,
-        50.0,
-        70.0
+        26.0,
+        26.0,
+        16.0
       ],
-      "vol_cm3": 19.4
+      "masa_g": 2
     },
-    "caseta_sensores": {
+    "rejilla": {
       "bbox_mm": [
-        64.0,
-        64.0,
-        53.0
+        9.6,
+        17.6,
+        51.6
       ],
-      "vol_cm3": 28.0
+      "masa_g": 5
+    },
+    "banda": {
+      "bbox_mm": [
+        249.0,
+        249.0,
+        24.5
+      ],
+      "masa_g": 135
     },
     "bandeja": {
       "bbox_mm": [
@@ -74,7 +90,7 @@
         224.0,
         15.0
       ],
-      "vol_cm3": 137.1
+      "masa_g": 170
     },
     "estante_pynq": {
       "bbox_mm": [
@@ -82,15 +98,7 @@
         98.0,
         43.0
       ],
-      "vol_cm3": 38.5
-    },
-    "punta_palo": {
-      "bbox_mm": [
-        34.0,
-        34.0,
-        32.0
-      ],
-      "vol_cm3": 11.1
+      "masa_g": 48
     }
   }
 }
