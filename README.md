@@ -60,6 +60,7 @@ Detalle de la trama, la API y los métodos de cada página web en [`internet/REA
 ├── internet/                # Central de monitoreo (web + base de datos) y gateway de la PYNQ
 │   ├── gateway/             # Script del gateway: LoRa (E220) -> búfer -> internet o SIM800L
 │   └── README.md            # Trama, API de ingesta, métodos de la ppt; web en https://sei.silosense.dev
+├── mecanica/boya/           # Diseño 3D paramétrico de la boya (CadQuery → STL/STEP) y renders en Blender
 ├── regla/                   # Regla para imprimir (44 cm + ArUco, 2 hojas A4) y su generador
 ├── imagenes_referencia/     # Fotos de reglas limnimétricas reales para probar el algoritmo
 │   └── CREDITOS.md          # Autor y licencia de cada imagen
