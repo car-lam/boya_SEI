@@ -60,6 +60,7 @@ Detalle de la trama, la API y los métodos de cada página web en [`internet/REA
 ├── internet/                # Central de monitoreo (web + base de datos) y gateway de la PYNQ
 │   ├── gateway/             # Script del gateway: LoRa (E220) -> búfer -> internet o SIM800L
 │   └── README.md            # Trama, API de ingesta, métodos de la ppt; web en https://sei.silosense.dev
+├── regla/                   # Regla para imprimir (44 cm + ArUco, 2 hojas A4) y su generador
 ├── imagenes_referencia/     # Fotos de reglas limnimétricas reales para probar el algoritmo
 │   └── CREDITOS.md          # Autor y licencia de cada imagen
 └── presentacion/            # Diapositivas de avance (.pptx, se editan en Canva)
