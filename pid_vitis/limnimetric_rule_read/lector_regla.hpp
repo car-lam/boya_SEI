@@ -11,13 +11,25 @@ typedef ap_uint<11> x_coor_t;
 typedef ap_uint<10> y_coor_t;
 
 // definiciones de error
-typedef ap_uint<4> err;
-#define RL_OK = 0;
-#define RL_ERR_IMAGEN_NO_ACCESIBLE = 1;
-#define RL_ERR_REGLA_NO_ENCONTRADA = 2;
+typedef ap_uint<4> rl_err_t;
+#define RL_OK 0
+#define RL_ERR_REGLA_NO_ENCONTRADA 1
+
+void lector_regla(
+    // Entradas
+    pixel_t* inicio,
+    int alto,
+    int ancho,
+    ap_uint<8> umbral,
+    // Salidas
+    x_coor_t &col_min,
+    y_coor_t &fil_min,
+    x_coor_t &col_max,
+    y_coor_t &fil_max,
+    rl_err_t &error
+);
 
 // TODO
-
-
-
 #endif
+
+
