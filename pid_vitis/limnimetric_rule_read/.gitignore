@@ -1,21 +1,13 @@
-# Ignore build output directory
-/build
-/export
+# Salida de síntesis/csim/cosim (work_dir de vitis-comp.json y el de la línea de comandos)
+/limnimetric_rule_read/
+/hls_work/
 
-# Ignore object files and dependent files
-.o
-.d
+# Generados por el IDE / clangd (rutas absolutas de cada máquina)
+compile_commands.json
+.cache/
 
-#Ignore logs folder and log files
-/logs
-.log
+# IP exportado (se regenera con package)
+*.zip
 
-#Ignore lock files
-.lock
-
-.bin
-.pdi
-.vitisWorkspace.json
-
-_ide/logs
-_ide/.wsdata
+# Salidas del testbench (las entradas .raw sí se versionan si son pequeñas)
+tb_salida*

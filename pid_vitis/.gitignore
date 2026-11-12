@@ -1,21 +1,19 @@
-# Ignore build output directory
-/build
-/export
-
-# Ignore object files and dependent files
-.o
-.d
-
-#Ignore logs folder and log files
-/logs
-.log
-
-#Ignore lock files
-.lock
-
-.bin
-.pdi
+# Workspace de Vitis Unified IDE: todo lo de _ide/ lo regenera el IDE
+_ide/
 .vitisWorkspace.json
+.peers.ini
 
-_ide/logs
-_ide/.wsdata
+# Salidas de compilación / exportación
+build/
+export/
+*.o
+*.d
+*.bin
+*.pdi
+*.xsa
+
+# Logs y bloqueos
+logs/
+*.log
+*.jou
+*.lock

@@ -6,7 +6,7 @@
 constexpr int MAX_W = 1280;
 constexpr int MAX_H = 720;
 
-typedef ap_uint<32> pixel_t;
+typedef ap_uint<8> pixel_t;
 typedef ap_uint<11> x_coor_t;
 typedef ap_uint<10> y_coor_t;
 
@@ -17,7 +17,7 @@ typedef ap_uint<4> rl_err_t;
 
 void lector_regla(
     // Entradas
-    pixel_t* inicio,
+    pixel_t* imagen_pixeles,
     int alto,
     int ancho,
     ap_uint<8> umbral,
