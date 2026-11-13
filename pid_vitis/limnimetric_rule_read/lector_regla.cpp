@@ -38,13 +38,15 @@ void lector_regla(
 
     int posicion_actual = 0;
 
-     #pragma HLS PIPELINE II=1
+
     // Detección de la regla
     for (y_coor_t fila = 0; fila < alto; fila++)
     {
         #pragma HLS LOOP_TRIPCOUNT max=MAX_H
+
         for (x_coor_t col = 0; col < ancho; col++)
         {
+            #pragma HLS PIPELINE II=1
             #pragma HLS LOOP_TRIPCOUNT max=MAX_W
             // is_regla corresponde a la condición que aún hay que hacer
             if (*(imagen_pixeles + posicion_actual) > umbral)
