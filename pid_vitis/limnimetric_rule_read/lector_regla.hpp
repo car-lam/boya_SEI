@@ -14,6 +14,7 @@ typedef ap_uint<10> y_coor_t;
 typedef ap_uint<4> rl_err_t;
 #define RL_OK 0
 #define RL_ERR_REGLA_NO_ENCONTRADA 1
+#define RL_ERR_INVALID_ARGS 2
 
 void lector_regla(
     // Entradas

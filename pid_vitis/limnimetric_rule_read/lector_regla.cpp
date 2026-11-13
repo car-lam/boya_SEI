@@ -17,7 +17,7 @@ void lector_regla(
     #pragma HLS INTERFACE s_axilite port=alto
     #pragma HLS INTERFACE s_axilite port=ancho
     #pragma HLS INTERFACE s_axilite port=umbral
-    
+
     #pragma HLS INTERFACE s_axilite port=col_min
     #pragma HLS INTERFACE s_axilite port=fil_min
     #pragma HLS INTERFACE s_axilite port=col_max
@@ -26,13 +26,19 @@ void lector_regla(
 
     #pragma HLS INTERFACE s_axilite port=return
 
+    if (ancho > MAX_W || alto > MAX_H) {
+        error = RL_ERR_INVALID_ARGS;
+        return;
+    }
+
     x_coor_t col_min_l = ancho;
     y_coor_t fil_min_l = alto;
     x_coor_t col_max_l = 0;
-    y_coor_t fil_max_l = 0; 
+    y_coor_t fil_max_l = 0;
 
     int posicion_actual = 0;
 
+     #pragma HLS PIPELINE II=1
     // Detección de la regla
     for (y_coor_t fila = 0; fila < alto; fila++)
     {
@@ -52,7 +58,7 @@ void lector_regla(
             posicion_actual += 1;
         }
     }
-    
+
     // Salida de error
     if (col_min_l == ancho) error = RL_ERR_REGLA_NO_ENCONTRADA;
     else error = RL_OK;
